@@ -89,7 +89,7 @@ func UnaryClientInterceptor(opts ...Option) grpc.UnaryClientInterceptor {
 			return invoker(ctx, method, req, reply, cc, callOpts...)
 		}
 
-		name, attr := spanInfo(method, cc.Target())
+		name, attr := spanInfo(method, target(cc))
 		var span trace.Span
 		ctx, span = tracer.Start(
 			ctx,
@@ -239,6 +239,15 @@ func (w *clientStream) sendStreamEvent(eventType streamEventType, err error) {
 	}
 }
 
+func target(cc *grpc.ClientConn) string {
+	// Since cc is ClientConn instead of ClientConnInterface, it  can be null in some
+	// situations.
+	if cc == nil {
+		return "unknown"
+	}
+	return cc.Target()
+}
+
 // StreamClientInterceptor returns a grpc.StreamClientInterceptor suitable
 // for use in a grpc.Dial call.
 func StreamClientInterceptor(opts ...Option) grpc.StreamClientInterceptor {
@@ -264,7 +273,7 @@ func StreamClientInterceptor(opts ...Option) grpc.StreamClientInterceptor {
 			return streamer(ctx, desc, cc, method, callOpts...)
 		}
 
-		name, attr := spanInfo(method, cc.Target())
+		name, attr := spanInfo(method, target(cc))
 		var span trace.Span
 		ctx, span = tracer.Start(
 			ctx,
